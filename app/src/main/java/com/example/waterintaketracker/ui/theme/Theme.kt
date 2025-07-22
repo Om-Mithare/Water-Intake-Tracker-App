@@ -15,8 +15,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 
-// Assuming you have these defined in your ui.theme.Color.kt
-// For the blueish-blackish dark theme:
 private val DarkPixelWaterColorScheme = darkColorScheme(
     primary = PixelWaterDarkPrimary,
     onPrimary = PixelWaterDarkOnPrimary,
@@ -33,16 +31,15 @@ private val DarkPixelWaterColorScheme = darkColorScheme(
     surface = PixelWaterDarkSurface,
     onSurface = PixelWaterDarkOnSurface,
     surfaceVariant = PixelWaterDarkSurfaceVariant,
-    onSurfaceVariant = PixelWaterDarkOnSurface, // Or a slightly different variant if needed
+    onSurfaceVariant = PixelWaterDarkOnSurface,
     error = PixelWaterDarkError,
     onError = PixelWaterDarkOnError,
     errorContainer = PixelWaterDarkErrorContainer,
     onErrorContainer = PixelWaterDarkOnErrorContainer,
-    outline = PixelWaterDarkPrimary.copy(alpha = 0.3f), // Example for outlines
-    outlineVariant = PixelWaterDarkSurfaceVariant.copy(alpha = 0.5f) // Example for subtle outlines
+    outline = PixelWaterDarkPrimary.copy(alpha = 0.3f),
+    outlineVariant = PixelWaterDarkSurfaceVariant.copy(alpha = 0.5f)
 )
 
-// Assuming you have these defined in your ui.theme.Color.kt for a contrasting light theme:
 private val LightPixelWaterColorScheme = lightColorScheme(
     primary = PixelWaterLightPrimary,
     onPrimary = PixelWaterLightOnPrimary,
@@ -74,10 +71,13 @@ fun WaterIntakeTrackerTheme(
     dynamicColor: Boolean = false,
     content: @Composable () -> Unit
 ) {
-    val colorScheme = if (darkTheme) {
-        DarkPixelWaterColorScheme
-    } else {
-        LightPixelWaterColorScheme
+    val colorScheme = when {
+        dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
+            val context = LocalContext.current
+            if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
+        }
+        darkTheme -> DarkPixelWaterColorScheme
+        else -> LightPixelWaterColorScheme
     }
 
     val view = LocalView.current

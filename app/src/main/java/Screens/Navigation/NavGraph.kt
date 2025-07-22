@@ -26,5 +26,9 @@ fun NavGraph()
             SignUpScreen(navController)
         }
 
+        composable("bottom") {
+            BottomNav(navController)
+        }
+
     }
 }

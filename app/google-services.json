@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "825145199958",
+    "project_id": "water-intake-tracker-c165c",
+    "storage_bucket": "water-intake-tracker-c165c.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:825145199958:android:5646f21fb9bdfaf3e15af7",
+        "android_client_info": {
+          "package_name": "com.example.waterintaketracker"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAjjLbMLkYs36tRVq81nBXdSJ12ZXyc818"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -29,7 +29,7 @@ class SignInViewModel @Inject constructor() : ViewModel() {
                         val uid = auth.currentUser?.uid ?: return@addOnCompleteListener
                         dbRef.child(uid).setValue(user).addOnSuccessListener {
                             _Signinstate.value = "Success"
-                            navController.navigate("profile")
+                            navController.navigate("bottom")
                         }.addOnFailureListener {
                             _Signinstate.value = "Failed to save user: ${it.message}"
                         }

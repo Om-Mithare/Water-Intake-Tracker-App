@@ -18,7 +18,7 @@ class LogINViewModel @Inject constructor() : ViewModel() {
         auth.signInWithEmailAndPassword(users.emailid,users.password).addOnCompleteListener {task ->
             if (task.isSuccessful){
                 _loginState.value =  "Login Success"
-                navController.navigate("bottomNav")
+                navController.navigate("bottom")
 
             }else{
                 _loginState.value = task.exception?.message
