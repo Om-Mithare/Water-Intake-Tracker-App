@@ -1,5 +1,6 @@
 package com.example.waterintaketracker.ui.theme // << MAKE SURE THIS MATCHES YOUR PROJECT'S PACKAGE NAME
 
+
 import android.app.Activity
 import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -99,3 +100,5 @@ fun WaterIntakeTrackerTheme(
         content = content
     )
 }
+
+
