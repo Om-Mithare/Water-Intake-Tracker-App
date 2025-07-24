@@ -7,6 +7,7 @@ import androidx.activity.enableEdgeToEdge
 import com.example.waterintaketracker.ui.theme.WaterIntakeTrackerTheme
 import com.waterintaketracker.screens.age.AgeScreen
 import dagger.hilt.android.AndroidEntryPoint
+import Screens.Exercise.ExerciseScreen
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
@@ -16,7 +17,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             WaterIntakeTrackerTheme {
 
-                    AgeScreen()
+                ExerciseScreen()
                 }
 
             }
