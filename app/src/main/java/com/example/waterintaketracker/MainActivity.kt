@@ -1,5 +1,6 @@
 package com.example.waterintaketracker
 
+import Screens.Weight.WeightScreen
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -14,8 +15,9 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.navigation.NavGraph
 import androidx.navigation.compose.rememberNavController
 import com.example.waterintaketracker.ui.theme.WaterIntakeTrackerTheme
+import com.waterintaketracker.screens.age.AgeScreen
 import dagger.hilt.android.AndroidEntryPoint
-import Screens.Exercise.ExerciseScreen
+
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -23,7 +25,7 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             WaterIntakeTrackerTheme {
-                ExerciseScreen()
+              AgeScreen()
             }
         }
     }
