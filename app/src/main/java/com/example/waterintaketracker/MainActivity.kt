@@ -15,7 +15,7 @@ import androidx.navigation.NavGraph
 import androidx.navigation.compose.rememberNavController
 import com.example.waterintaketracker.ui.theme.WaterIntakeTrackerTheme
 import dagger.hilt.android.AndroidEntryPoint
-import Screens.Gender.GenderScreen
+import Screens.Exercise.ExerciseScreen
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -23,7 +23,7 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             WaterIntakeTrackerTheme {
-                GenderScreen()
+                ExerciseScreen()
             }
         }
     }

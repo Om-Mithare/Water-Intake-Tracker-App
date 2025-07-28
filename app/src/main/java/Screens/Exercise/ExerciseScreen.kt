@@ -7,18 +7,14 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.waterintaketracker.ui.theme.*
 
 @Composable
 fun ExerciseScreen(
@@ -37,88 +33,56 @@ fun ExerciseScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.White)
-            .padding(horizontal = 24.dp, vertical = 24.dp)
+            .background(PixelWaterDarkBackground)
+            .padding(horizontal = 20.dp, vertical = 20.dp)
     ) {
+        // Small top spacing
         Spacer(modifier = Modifier.height(20.dp))
 
         // Question Box
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .clip(RoundedCornerShape(16.dp))
-                .background(Color(0xFFF1F5FF))
-                .border(1.5.dp, Color(0xFF4C84FF), RoundedCornerShape(16.dp))
-                .padding(20.dp)
+                .clip(PixelShapes.medium)
+                .background(PixelWaterDarkSurface)
+                .border(2.dp, PixelWaterDarkPrimary, PixelShapes.medium)
+                .padding(12.dp)
         ) {
             Text(
-                text = "How much exercise do you\ndo each week?",
-                style = MaterialTheme.typography.headlineSmall.copy(
-                    fontWeight = FontWeight.Bold,
-                    color = Color(0xFF1C1C1C)
-                ),
-                textAlign = TextAlign.Start,
-                modifier = Modifier.fillMaxWidth()
-            )
-        }
-
-        Spacer(modifier = Modifier.height(24.dp))
-
-        // Subtext Box
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(14.dp))
-                .background(Color(0xFFE9F0FF))
-                .padding(16.dp)
-        ) {
-            Text(
-                text = "🏃‍♀️ Your water needs change with how much you move. Select your weekly activity level below.",
-                style = MaterialTheme.typography.bodyLarge.copy(
-                    color = Color(0xFF333333)
+                text = "How much exercise\ndo you do weekly?",
+                style = PixelTypography.headlineSmall.copy(
+                    color = PixelWaterDarkOnSurface
                 )
             )
         }
 
-        Spacer(modifier = Modifier.height(28.dp))
+        Spacer(modifier = Modifier.height(26.dp)) // Reduced space
 
-        // Option Buttons
+        // Options List
         Column(
-            verticalArrangement = Arrangement.spacedBy(18.dp)
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+            modifier = Modifier.fillMaxWidth()
         ) {
             exerciseOptions.forEach { option ->
                 val isSelected = selectedExercise == option
-
-                val backgroundColor = if (isSelected) {
-                    Brush.horizontalGradient(
-                        listOf(Color(0xFF4C84FF), Color(0xFF709BFF))
-                    )
-                } else {
-                    Brush.horizontalGradient(
-                        listOf(Color.White, Color.White)
-                    )
-                }
+                val bgColor = if (isSelected) PixelWaterDarkPrimary else PixelWaterDarkSurfaceVariant
+                val borderColor = if (isSelected) PixelWaterDarkOnPrimary else PixelWaterDarkOnSurface
 
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(64.dp)
-                        .clip(RoundedCornerShape(18.dp))
-                        .background(backgroundColor)
+                        .height(58.dp)
+                        .clip(PixelShapes.medium)
+                        .background(bgColor)
                         .clickable { viewModel.onExerciseSelected(option) }
-                        .border(
-                            width = if (isSelected) 2.dp else 1.dp,
-                            color = if (isSelected) Color(0xFF4C84FF) else Color(0xFFE0E0E0),
-                            shape = RoundedCornerShape(18.dp)
-                        )
-                        .padding(start = 20.dp),
+                        .border(2.dp, borderColor, PixelShapes.medium)
+                        .padding(start = 16.dp),
                     contentAlignment = Alignment.CenterStart
                 ) {
                     Text(
                         text = option,
-                        style = MaterialTheme.typography.bodyLarge.copy(
-                            fontWeight = FontWeight.Bold,
-                            color = if (isSelected) Color.White else Color(0xFF3A3A3A)
+                        style = PixelTypography.titleSmall.copy(
+                            color = PixelWaterDarkOnSurface
                         )
                     )
                 }
@@ -137,18 +101,16 @@ fun ExerciseScreen(
                 onClick = onNextClick,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(top = 30.dp),
-                shape = RoundedCornerShape(14.dp),
+                    .padding(vertical = 20.dp),
+                shape = PixelShapes.medium,
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFF4C84FF),
-                    contentColor = Color.White
+                    containerColor = PixelWaterDarkPrimary,
+                    contentColor = PixelWaterDarkOnPrimary
                 )
             ) {
                 Text(
-                    text = "Next",
-                    style = MaterialTheme.typography.titleMedium.copy(
-                        fontWeight = FontWeight.SemiBold
-                    )
+                    text = "NEXT",
+                    style = PixelTypography.labelMedium
                 )
             }
         }
