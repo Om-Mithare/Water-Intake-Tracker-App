@@ -8,7 +8,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import javax.inject.Inject
 
-class LogINViewModel @Inject constructor() : ViewModel() {
+class LogInViewModel @Inject constructor() : ViewModel() {
 
     private val auth = FirebaseAuth.getInstance()
     private val _loginState = MutableStateFlow<String?>(null)

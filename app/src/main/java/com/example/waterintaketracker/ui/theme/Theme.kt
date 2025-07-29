@@ -15,6 +15,9 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
+import androidx.compose.ui.graphics.Color
+
+
 
 private val DarkPixelWaterColorScheme = darkColorScheme(
     primary = PixelWaterDarkPrimary,
@@ -77,6 +80,7 @@ fun WaterIntakeTrackerTheme(
             val context = LocalContext.current
             if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
         }
+
         darkTheme -> DarkPixelWaterColorScheme
         else -> LightPixelWaterColorScheme
     }
@@ -89,7 +93,8 @@ fun WaterIntakeTrackerTheme(
             window.navigationBarColor = colorScheme.background.toArgb()
 
             WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = !darkTheme
-            WindowCompat.getInsetsController(window, view).isAppearanceLightNavigationBars = !darkTheme
+            WindowCompat.getInsetsController(window, view).isAppearanceLightNavigationBars =
+                !darkTheme
         }
     }
 
@@ -99,6 +104,10 @@ fun WaterIntakeTrackerTheme(
         shapes = PixelShapes,
         content = content
     )
+
+
+
+
 }
 
 

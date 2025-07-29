@@ -1,5 +1,7 @@
 package Screens.Navigation
 
+import Screens.Home.HomeScreen
+import Screens.Home.HomeViewModel
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
@@ -13,11 +15,17 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.waterintaketracker.Models.NavItems
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+import androidx.hilt.navigation.compose.hiltViewModel
+import com.example.yourappname.ui.history.HistoryScreen
 
 @Composable
 fun BottomNav(
@@ -25,11 +33,9 @@ fun BottomNav(
 ) {
 
     val NavItemslist = listOf(
-        NavItems("Home", Icons.Default.Home),
+        NavItems("Home", Icons.Filled.Home),
         NavItems("History", Icons.Default.Refresh),
         NavItems("Profile", Icons.Default.Person)
-
-
     )
 
     var selectedIndex = remember {
@@ -66,11 +72,13 @@ fun BottomNav(
 
 @Composable
 fun contentScreen(modifier: Modifier = Modifier, selectedIndex: Int, navController: NavController) {
+    val homeViewModel : HomeViewModel = hiltViewModel()
+
     when(selectedIndex){
-//        0 -> HomeScreen( navController = navController)
-//        1 -> SmokerForm()
+          0 -> HomeScreen(navController, modifier = modifier, homeViewModel = homeViewModel)
+          1 -> HistoryScreen()
+
 //        2 -> DisadvantagesScreen()
-//        3 -> ProfileScreen(navController = navController)
 
 
     }

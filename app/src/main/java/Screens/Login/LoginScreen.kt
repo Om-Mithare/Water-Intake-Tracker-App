@@ -22,7 +22,7 @@ import com.example.waterintaketracker.Models.Users
 @Composable
 fun LoginScreen(
     navController: NavController,
-    viewModel: LogINViewModel = hiltViewModel()
+    viewModel: LogInViewModel = hiltViewModel()
 ) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
