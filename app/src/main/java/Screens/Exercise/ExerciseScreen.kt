@@ -7,21 +7,29 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.material3.*
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.waterintaketracker.ui.theme.*
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.navigation.NavController
+import com.example.waterintaketracker.ui.theme.* // Make sure this path is correct
+import Screens.Profile.ProfileViewModel // Make sure this path is correct
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 
 @Composable
 fun ExerciseScreen(
-    viewModel: ExerciseViewModel = viewModel(),
-    onNextClick: () -> Unit = {}
+    navController: NavController,
+    profileViewModel: ProfileViewModel = hiltViewModel()
 ) {
-    val selectedExercise by viewModel.selectedExercise.collectAsState()
+    var selectedExercise by remember { mutableStateOf("") }
 
     val exerciseOptions = listOf(
         "🪑 Rarely exercise",
@@ -33,84 +41,89 @@ fun ExerciseScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(PixelWaterDarkBackground)
-            .padding(horizontal = 20.dp, vertical = 20.dp)
+            .background(PixelWaterDarkBackground) // Consistent background from your theme
+            .padding(horizontal = 24.dp, vertical = 32.dp), // Consistent screen padding
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        // Small top spacing
-        Spacer(modifier = Modifier.height(20.dp))
-
-        // Question Box
-        Box(
+        // Main Question/Title
+        Text(
+            text = "How much exercise\ndo you do weekly?",
+            style = MaterialTheme.typography.displaySmall.copy(
+                color = MaterialTheme.colorScheme.onBackground,
+                textAlign = TextAlign.Center
+            ),
             modifier = Modifier
                 .fillMaxWidth()
-                .clip(PixelShapes.medium)
-                .background(PixelWaterDarkSurface)
-                .border(2.dp, PixelWaterDarkPrimary, PixelShapes.medium)
-                .padding(12.dp)
-        ) {
-            Text(
-                text = "How much exercise\ndo you do weekly?",
-                style = PixelTypography.headlineSmall.copy(
-                    color = PixelWaterDarkOnSurface
-                )
-            )
-        }
+                .padding(top = 40.dp) // Spacing for the title from the top of the content area
+        )
 
-        Spacer(modifier = Modifier.height(26.dp)) // Reduced space
+        Spacer(modifier = Modifier.height(32.dp)) // Consistent spacing after the title
 
         // Options List
         Column(
-            verticalArrangement = Arrangement.spacedBy(16.dp),
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(16.dp) // Consistent spacing between option boxes
         ) {
-            exerciseOptions.forEach { option ->
-                val isSelected = selectedExercise == option
-                val bgColor = if (isSelected) PixelWaterDarkPrimary else PixelWaterDarkSurfaceVariant
-                val borderColor = if (isSelected) PixelWaterDarkOnPrimary else PixelWaterDarkOnSurface
+            exerciseOptions.forEach { optionText ->
+                val isSelected = selectedExercise == optionText
+
+                // Determine colors based on selection state, using your theme colors
+                val backgroundColor = if (isSelected) PixelWaterDarkPrimary else PixelWaterDarkSurfaceVariant
+                val textColor = if (isSelected) PixelWaterDarkOnPrimary else PixelWaterDarkOnSurface
+                val borderColor = if (isSelected) PixelWaterDarkPrimary else PixelWaterDarkOutline // Or another theme color for unselected borders
 
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(58.dp)
-                        .clip(PixelShapes.medium)
-                        .background(bgColor)
-                        .clickable { viewModel.onExerciseSelected(option) }
-                        .border(2.dp, borderColor, PixelShapes.medium)
-                        .padding(start = 16.dp),
-                    contentAlignment = Alignment.CenterStart
+                        .height(72.dp) // Define a consistent height for these selectable boxes
+                        .clip(PixelShapes.medium) // Consistent rounded corners from your theme
+                        .background(backgroundColor)
+                        .border(
+                            width = if (isSelected) 2.dp else 1.dp, // Slightly thicker border when selected
+                            color = borderColor,
+                            shape = PixelShapes.medium
+                        )
+                        .clickable {
+                            selectedExercise = optionText
+                            // Update the ViewModel with the selected exercise level
+                            profileViewModel.updateProfileField("exerciseLevel", optionText)
+                        }
+                        .padding(horizontal = 20.dp), // Internal padding for the content of the box
+                    contentAlignment = Alignment.CenterStart // Align text and icon to the start (left)
                 ) {
                     Text(
-                        text = option,
-                        style = PixelTypography.titleSmall.copy(
-                            color = PixelWaterDarkOnSurface
-                        )
+                        text = optionText,
+                        style = PixelTypography.titleMedium.copy(color = textColor), // Consistent text style from your theme
                     )
                 }
             }
         }
 
-        Spacer(modifier = Modifier.weight(1f))
+        Spacer(modifier = Modifier.weight(1f)) // This pushes the button to the bottom of the screen
 
-        // Next Button
+        // Next Button - appears when an option is selected
         AnimatedVisibility(
-            visible = selectedExercise.isNotBlank(),
-            enter = fadeIn() + slideInVertically(initialOffsetY = { it / 2 }),
+            visible = selectedExercise.isNotBlank(), // Button is visible only when an option is selected
+            enter = fadeIn() + slideInVertically(initialOffsetY = { it / 2 }), // Animation for appearance
             modifier = Modifier.fillMaxWidth()
         ) {
             Button(
-                onClick = onNextClick,
+                onClick = {
+                    // Navigate to the next screen, e.g., your main app screen with bottom navigation
+                    navController.navigate("bottom")
+                },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(vertical = 20.dp),
-                shape = PixelShapes.medium,
+                    .height(56.dp), // Define a consistent height for primary action buttons
+                shape = PixelShapes.medium, // Consistent button shape from your theme
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = PixelWaterDarkPrimary,
-                    contentColor = PixelWaterDarkOnPrimary
+                    containerColor = PixelWaterDarkPrimary, // Consistent button color from your theme
+                    contentColor = PixelWaterDarkOnPrimary    // Consistent button text color from your theme
                 )
             ) {
                 Text(
                     text = "NEXT",
-                    style = PixelTypography.labelMedium
+                    style = PixelTypography.labelLarge // Or labelMedium, ensure consistency with other buttons
                 )
             }
         }

@@ -15,7 +15,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Paint
 import androidx.compose.ui.graphics.PaintingStyle
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
@@ -25,10 +24,12 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import kotlin.math.max
+import kotlin.random.Random
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -60,7 +61,7 @@ fun HistoryScreen() {
                 .fillMaxSize()
                 .padding(paddingValues)
                 .verticalScroll(rememberScrollState())
-                .padding(bottom = 8.dp)
+                .padding(bottom = 56.dp) // Added padding for bottom navigation
         ) {
             when (val currentState = uiState) {
                 is HistoryViewModel.UiState.Loading -> LoadingView(
@@ -88,6 +89,8 @@ fun HistoryScreen() {
                     colors = colors
                 )
             }
+
+            DailyTipsSection()
         }
     }
 }
@@ -172,6 +175,84 @@ private fun SuccessContent(
 }
 
 @Composable
+private fun DailyTipsSection() {
+    val tips = listOf(
+        "Drink a glass of water before every meal.",
+        "Keep a water bottle with you at all times.",
+        "Set reminders to drink water throughout the day.",
+        "Try adding slices of lemon or cucumber for flavor.",
+        "Drink water after every bathroom break."
+    )
+    val randomTip = remember { tips[Random.nextInt(tips.size)] }
+
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 12.dp),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+    ) {
+        Box(
+            modifier = Modifier
+                .height(100.dp)
+                .fillMaxWidth()
+                .padding(16.dp)
+        ) {
+            PixelatedBackground(
+                color = Color(0xFFFFF9C4).copy(alpha = 0.2f), // subtle yellow highlight
+                blockSize = 8.dp,
+                modifier = Modifier.matchParentSize()
+            )
+            Column(
+                modifier = Modifier.fillMaxSize(),
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    text = "💡 Daily Tip",
+                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant // previous color scheme
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = randomTip,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant, // previous color scheme
+                    textAlign = TextAlign.Center
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun PixelatedBackground(
+    color: Color,
+    blockSize: Dp,
+    modifier: Modifier = Modifier
+) {
+    Canvas(modifier = modifier) {
+        val blockPx = blockSize.toPx()
+        val cols = (size.width / blockPx).toInt() + 1
+        val rows = (size.height / blockPx).toInt() + 1
+
+        for (row in 0 until rows) {
+            for (col in 0 until cols) {
+                // Draw blocks with some spacing to create pixelated effect
+                val left = col * blockPx
+                val top = row * blockPx
+                drawRect(
+                    color = color,
+                    topLeft = Offset(left, top),
+                    size = Size(blockPx * 0.8f, blockPx * 0.8f)
+                )
+            }
+        }
+    }
+}
+
+@Composable
 private fun WeeklyChart(
     weeklyData: List<DailyData>,
     goal: Int,
@@ -215,7 +296,7 @@ private fun WeeklyChart(
         }
     }
     val composeGoalLinePaint = remember(goalLineColor, density) {
-        Paint().apply {
+        androidx.compose.ui.graphics.Paint().apply {
             style = PaintingStyle.Stroke; strokeWidth = density.run { 2.5.dp.toPx() }
             pathEffect = PathEffect.dashPathEffect(floatArrayOf(15f, 10f), 0f); color = goalLineColor
         }

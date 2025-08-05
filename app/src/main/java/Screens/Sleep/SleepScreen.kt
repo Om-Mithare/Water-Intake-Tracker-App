@@ -1,6 +1,5 @@
 package Screens.Sleep
 
-
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
@@ -17,11 +16,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.navigation.NavController
 import com.example.waterintaketracker.ui.theme.PixelTypography
+import androidx.hilt.navigation.compose.hiltViewModel
+import Screens.Profile.ProfileViewModel // Import your ProfileViewModel
 
 @Composable
 fun SleepScreen(
-    onNextClick: () -> Unit = {}
+    navController: NavController,
+    profileViewModel: ProfileViewModel = hiltViewModel() // Inject ProfileViewModel
 ) {
     var selectedHour by remember { mutableStateOf("08") }
     var selectedMinute by remember { mutableStateOf("00") }
@@ -78,7 +81,12 @@ fun SleepScreen(
             modifier = Modifier.fillMaxWidth()
         ) {
             Button(
-                onClick = onNextClick,
+                onClick = {
+                    // Save the selected sleep time to Firebase
+                    val sleepTime = "$selectedHour:$selectedMinute $selectedPeriod"
+                    profileViewModel.updateProfileField("sleepTime", sleepTime)
+                    navController.navigate("exercise")
+                },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(56.dp),

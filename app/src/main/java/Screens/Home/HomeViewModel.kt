@@ -1,87 +1,111 @@
-package Screens.Home
+package com.example.waterintaketracker.ViewModels
 
+// No longer need to import ProfileViewModel directly
 import androidx.compose.runtime.mutableStateListOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.waterintaketracker.Models.WaterLogEntry
+import com.example.waterintaketracker.data.UserRepository // Import UserRepository
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.database.DataSnapshot
-import com.google.firebase.database.DatabaseError
-import com.google.firebase.database.FirebaseDatabase
-import com.google.firebase.database.ValueEventListener
+import com.google.firebase.database.*
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
-import java.util.Calendar
-import java.util.Date
-import java.util.Locale
-import java.util.UUID
+import java.util.*
 import javax.inject.Inject
-
-// For HistoryScreen's graph
-data class IntakeGraphPoint(
-    val timeLabel: String, // e.g., "10 AM", "2 PM"
-    val amountNormalised: Float, // 0.0 to 1.0 for bar height
-    val amountActual: Int // e.g., 250ml
-)
 
 @HiltViewModel
 class HomeViewModel @Inject constructor(
-    private val firebaseAuth: FirebaseAuth,
-    private val firebaseDatabase: FirebaseDatabase
+    private val firebaseAuth: FirebaseAuth, // Keep for auth state if needed for logs
+    private val firebaseDatabase: FirebaseDatabase, // Keep for water logs
+    private val userRepository: UserRepository // Inject UserRepository
 ) : ViewModel() {
 
     private val _todaysLog = mutableStateListOf<WaterLogEntry>()
-    val todaysLog: List<WaterLogEntry> = _todaysLog
+    val todaysLog: List<WaterLogEntry> get() = _todaysLog
 
     private val _totalIntakeToday = MutableStateFlow(0)
     val totalIntakeToday: StateFlow<Int> = _totalIntakeToday.asStateFlow()
 
-    private val _dailyGoalMl = MutableStateFlow(2500) // Default goal
-    val dailyGoalMl: StateFlow<Int> = _dailyGoalMl.asStateFlow()
+    // Get the daily goal directly from the shared UserRepository
+    val dailyGoalMl: StateFlow<Int> = userRepository.calculatedDailyWaterIntake
 
-    private val _todayIntakeGraphData = MutableStateFlow<List<IntakeGraphPoint>>(emptyList())
-    val todayIntakeGraphData: StateFlow<List<IntakeGraphPoint>> = _todayIntakeGraphData.asStateFlow()
+    private val _currentStreak = MutableStateFlow(0)
+    val currentStreak: StateFlow<Int> = _currentStreak.asStateFlow()
 
     private var waterLogListener: ValueEventListener? = null
-    private var dailyGoalListener: ValueEventListener? = null
+    private var currentHomeUserId: String? = null
 
     init {
-        // Observe authentication state to load data for the current user
-        firebaseAuth.addAuthStateListener { auth ->
-            if (auth.currentUser != null) {
-                val userId = auth.currentUser!!.uid
-                startListeningForWaterLogs(userId)
-                startListeningForDailyGoal(userId)
-            } else {
-                stopListeningForWaterLogs()
-                stopListeningForDailyGoal()
-                _todaysLog.clear()
-                _dailyGoalMl.value = 2500 // Reset to default if logged out
-                recalculateTotalsAndGraph()
+        // Observe dailyGoalMl changes from the repository to recalculate streak
+        viewModelScope.launch {
+            dailyGoalMl.collectLatest { goal ->
+                // Only recalculate if a user is active and goal actually changed (or on init)
+                if (currentHomeUserId != null) {
+                    recalculateTotalsAndUpdateStreak()
+                }
             }
         }
-        // If user is already logged in on app start, load data
-        firebaseAuth.currentUser?.let {
-            startListeningForWaterLogs(it.uid)
-            startListeningForDailyGoal(it.uid)
+
+        firebaseAuth.addAuthStateListener { auth ->
+            val user = auth.currentUser
+            if (user != null) {
+                if (currentHomeUserId != user.uid) {
+                    cleanupPreviousUserListeners()
+                    currentHomeUserId = user.uid
+                    initializeDataForUser(user.uid)
+                }
+            } else {
+                cleanupPreviousUserListeners()
+                currentHomeUserId = null
+                clearHomeUserData()
+            }
         }
+        firebaseAuth.currentUser?.uid?.let { userId ->
+            if (currentHomeUserId == null) {
+                currentHomeUserId = userId
+                initializeDataForUser(userId)
+            }
+        }
+    }
+
+    private fun initializeDataForUser(userId: String) {
+        startListeningForWaterLogs(userId)
+        // Streak will be recalculated when dailyGoalMl emits or logs change
+    }
+
+    private fun clearHomeUserData() {
+        _todaysLog.clear()
+        _totalIntakeToday.value = 0
+        _currentStreak.value = 0
+        // dailyGoalMl will automatically reset via userRepository if user logs out
+    }
+
+    // ... (rest of HomeViewModel: startListeningForWaterLogs, addWater, removeLogEntry,
+    //      recalculateTotalsAndUpdateStreak, calculateStreakInternal, getStartOfDayMillis, getEndOfDayMillis,
+    //      cleanupPreviousUserListeners, onCleared)
+    // IMPORTANT: Ensure calculateStreakInternal() uses `dailyGoalMl.value`
+
+    private fun cleanupPreviousUserListeners() {
+        currentHomeUserId?.let { userId ->
+            waterLogListener?.let { listener ->
+                firebaseDatabase.getReference("waterLogs").child(userId).removeEventListener(listener)
+            }
+        }
+        waterLogListener = null
     }
 
     override fun onCleared() {
         super.onCleared()
-        stopListeningForWaterLogs()
-        stopListeningForDailyGoal()
+        cleanupPreviousUserListeners()
     }
 
     private fun startListeningForWaterLogs(userId: String) {
-        stopListeningForWaterLogs() // Ensure only one listener is active
+        cleanupPreviousUserListeners() // Ensure old listeners are removed
 
         val todayStartMillis = getStartOfDayMillis(System.currentTimeMillis())
-        val todayEndMillis = todayStartMillis + (24 * 60 * 60 * 1000) - 1 // End of today
+        val todayEndMillis = getEndOfDayMillis(System.currentTimeMillis())
 
         val waterLogsRef = firebaseDatabase.getReference("waterLogs")
             .child(userId)
@@ -89,169 +113,128 @@ class HomeViewModel @Inject constructor(
             .startAt(todayStartMillis.toDouble())
             .endAt(todayEndMillis.toDouble())
 
-        waterLogListener = object : ValueEventListener {
+        waterLogListener = object : ValueEventListener { // Assign directly
             override fun onDataChange(snapshot: DataSnapshot) {
                 val newLogs = mutableListOf<WaterLogEntry>()
-                for (logSnapshot in snapshot.children) {
-                    val logEntry = logSnapshot.getValue(WaterLogEntry::class.java)
-                    logEntry?.let { newLogs.add(it) }
+                snapshot.children.forEach { logSnapshot ->
+                    logSnapshot.getValue(WaterLogEntry::class.java)?.let { newLogs.add(it) }
                 }
-                // Update _todaysLog and trigger recalculation
                 _todaysLog.clear()
-                _todaysLog.addAll(newLogs.sortedByDescending { it.timestamp }) // Sort by newest first
-                recalculateTotalsAndGraph()
+                _todaysLog.addAll(newLogs.sortedByDescending { it.timestamp })
+                recalculateTotalsAndUpdateStreak()
             }
 
             override fun onCancelled(error: DatabaseError) {
-                // Handle error
-                println("Failed to load water logs: ${error.message}")
+                System.err.println("Failed to load water logs: ${error.message}")
+                _todaysLog.clear()
+                recalculateTotalsAndUpdateStreak()
             }
         }
         waterLogsRef.addValueEventListener(waterLogListener!!)
     }
 
-    private fun stopListeningForWaterLogs() {
-        waterLogListener?.let {
-            firebaseAuth.currentUser?.uid?.let { userId ->
-                firebaseDatabase.getReference("waterLogs").child(userId).removeEventListener(it)
-            }
-            waterLogListener = null
-        }
-    }
-
-    private fun startListeningForDailyGoal(userId: String) {
-        stopListeningForDailyGoal() // Ensure only one listener is active
-
-        val userGoalRef = firebaseDatabase.getReference("users").child(userId).child("dailyGoalMl")
-
-        dailyGoalListener = object : ValueEventListener {
-            override fun onDataChange(snapshot: DataSnapshot) {
-                val goal = snapshot.getValue(Int::class.java)
-                _dailyGoalMl.value = goal ?: 2500 // Default if not found
-                recalculateTotalsAndGraph()
-            }
-
-            override fun onCancelled(error: DatabaseError) {
-                println("Failed to load daily goal: ${error.message}")
-            }
-        }
-        userGoalRef.addValueEventListener(dailyGoalListener!!)
-    }
-
-    private fun stopListeningForDailyGoal() {
-        dailyGoalListener?.let {
-            firebaseAuth.currentUser?.uid?.let { userId ->
-                firebaseDatabase.getReference("users").child(userId).child("dailyGoalMl").removeEventListener(it)
-            }
-            dailyGoalListener = null
-        }
-    }
-
-
     fun addWater(amountMl: Int) {
         viewModelScope.launch {
-            val userId = firebaseAuth.currentUser?.uid ?: run {
-                // Handle case where user is not logged in (e.g., show a message)
-                println("User not logged in. Cannot add water.")
-                return@launch
-            }
+            val userId = currentHomeUserId ?: return@launch
+            if (amountMl <= 0) return@launch
 
             val currentTime = System.currentTimeMillis()
-            val timeFormatted = SimpleDateFormat("h:mm a", Locale.getDefault()).format(Date(currentTime))
             val newEntry = WaterLogEntry(
                 id = UUID.randomUUID().toString(),
                 amountMl = amountMl,
                 timestamp = currentTime,
-                timeFormatted = timeFormatted,
-                userId = userId // Assign current user's ID
+                timeFormatted = SimpleDateFormat("h:mm a", Locale.getDefault()).format(Date(currentTime)),
+                userId = userId
             )
-
-            firebaseDatabase.getReference("waterLogs")
-                .child(userId)
-                .child(newEntry.id)
+            firebaseDatabase.getReference("waterLogs").child(userId).child(newEntry.id)
                 .setValue(newEntry)
-                .addOnSuccessListener {
-                    println("Water log added successfully to Firebase!")
-                    // The ValueEventListener will automatically update _todaysLog
-                }
-                .addOnFailureListener { e ->
-                    println("Failed to add water log to Firebase: ${e.message}")
-                }
         }
     }
 
     fun removeLogEntry(entry: WaterLogEntry) {
         viewModelScope.launch {
-            val userId = firebaseAuth.currentUser?.uid ?: run {
-                println("User not logged in. Cannot remove water log.")
-                return@launch
-            }
-
-            firebaseDatabase.getReference("waterLogs")
-                .child(userId)
-                .child(entry.id)
+            val userId = currentHomeUserId ?: return@launch
+            firebaseDatabase.getReference("waterLogs").child(userId).child(entry.id)
                 .removeValue()
-                .addOnSuccessListener {
-                    println("Water log removed successfully from Firebase!")
-                    // The ValueEventListener will automatically update _todaysLog
-                }
-                .addOnFailureListener { e ->
-                    println("Failed to remove water log from Firebase: ${e.message}")
-                }
         }
     }
 
-    fun setDailyGoal(newGoal: Int) {
-        _dailyGoalMl.value = newGoal.coerceAtLeast(0)
-        // Save the daily goal to Firebase for the user
-        firebaseAuth.currentUser?.uid?.let { userId ->
-            firebaseDatabase.getReference("users").child(userId).child("dailyGoalMl").setValue(newGoal)
-                .addOnSuccessListener { println("Daily goal updated in Firebase.") }
-                .addOnFailureListener { e -> println("Failed to update daily goal: ${e.message}") }
-        }
-        recalculateTotalsAndGraph() // Recalculate graph as goal might affect normalization
+
+    private fun recalculateTotalsAndUpdateStreak() {
+        _totalIntakeToday.value = _todaysLog.sumOf { it.amountMl }
+        calculateStreakInternal()
     }
 
-
-    private fun recalculateTotalsAndGraph() {
-        val total = _todaysLog.sumOf { it.amountMl }
-        _totalIntakeToday.value = total
-        generateIntakeGraphData()
-    }
-
-    private fun generateIntakeGraphData() {
-        if (_todaysLog.isEmpty()) {
-            _todayIntakeGraphData.value = emptyList()
+    private fun calculateStreakInternal() {
+        val userId = currentHomeUserId
+        if (userId == null) {
+            _currentStreak.value = 0
             return
         }
+        val currentGoal = dailyGoalMl.value // Use the value from the StateFlow
 
-        val sortedLogs = _todaysLog.sortedBy { it.timestamp }
-        // Normalize against the daily goal if it's greater than any single log entry,
-        // otherwise normalize against the max single log entry for better bar representation.
-        val maxIntakeInSingleLog = sortedLogs.maxOfOrNull { it.amountMl }?.toFloat() ?: _dailyGoalMl.value.toFloat()
-        val normalizationBase = maxOf(maxIntakeInSingleLog, _dailyGoalMl.value.toFloat())
+        firebaseDatabase.getReference("waterLogs").child(userId)
+            .orderByChild("timestamp")
+            .addListenerForSingleValueEvent(object : ValueEventListener {
+                override fun onDataChange(snapshot: DataSnapshot) {
+                    val allUserLogs = mutableListOf<WaterLogEntry>()
+                    snapshot.children.forEach { logSnapshot ->
+                        logSnapshot.getValue(WaterLogEntry::class.java)?.let { allUserLogs.add(it) }
+                    }
 
-        if (normalizationBase == 0f) { // Avoid division by zero
-            _todayIntakeGraphData.value = emptyList()
-            return
-        }
+                    if (allUserLogs.isEmpty()) {
+                        _currentStreak.value = 0
+                        return
+                    }
 
-        _todayIntakeGraphData.value = sortedLogs.map { log ->
-            IntakeGraphPoint(
-                timeLabel = log.timeFormatted,
-                amountNormalised = (log.amountMl.toFloat() / normalizationBase).coerceIn(0.05f, 1f), // min 5% height
-                amountActual = log.amountMl
-            )
-        }
+                    val loggedDaysMetGoal = allUserLogs
+                        .groupBy { getStartOfDayMillis(it.timestamp) }
+                        .mapValues { entry -> entry.value.sumOf { log -> log.amountMl } }
+                        .filterValues { dailyTotal -> dailyTotal >= currentGoal }
+                        .keys
+                        .sortedDescending()
+
+                    if (loggedDaysMetGoal.isEmpty()) {
+                        _currentStreak.value = 0
+                        return
+                    }
+
+                    var streak = 0
+                    val todayStart = getStartOfDayMillis(System.currentTimeMillis())
+                    val calendar = Calendar.getInstance()
+
+                    for (i in loggedDaysMetGoal.indices) {
+                        calendar.timeInMillis = todayStart
+                        calendar.add(Calendar.DAY_OF_YEAR, -i)
+                        val expectedDayForStreak = calendar.timeInMillis
+
+                        if (i < loggedDaysMetGoal.size && loggedDaysMetGoal[i] == expectedDayForStreak) {
+                            streak++
+                        } else {
+                            break
+                        }
+                    }
+                    _currentStreak.value = streak
+                }
+
+                override fun onCancelled(error: DatabaseError) {
+                    System.err.println("Failed to calculate streak: ${error.message}")
+                    _currentStreak.value = 0
+                }
+            })
     }
 
     private fun getStartOfDayMillis(timestamp: Long): Long {
-        val calendar = Calendar.getInstance()
-        calendar.timeInMillis = timestamp
-        calendar.set(Calendar.HOUR_OF_DAY, 0)
-        calendar.set(Calendar.MINUTE, 0)
-        calendar.set(Calendar.SECOND, 0)
-        calendar.set(Calendar.MILLISECOND, 0)
-        return calendar.timeInMillis
+        return Calendar.getInstance().apply {
+            timeInMillis = timestamp
+            set(Calendar.HOUR_OF_DAY, 0); set(Calendar.MINUTE, 0); set(Calendar.SECOND, 0); set(Calendar.MILLISECOND, 0)
+        }.timeInMillis
+    }
+
+    private fun getEndOfDayMillis(timestamp: Long): Long {
+        return Calendar.getInstance().apply {
+            timeInMillis = timestamp
+            set(Calendar.HOUR_OF_DAY, 23); set(Calendar.MINUTE, 59); set(Calendar.SECOND, 59); set(Calendar.MILLISECOND, 999)
+        }.timeInMillis
     }
 }

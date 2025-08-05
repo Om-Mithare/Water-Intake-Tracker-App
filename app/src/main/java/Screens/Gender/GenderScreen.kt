@@ -1,62 +1,53 @@
+package Screens.Gender
 
-
-package Screens.Gender // Assuming this is your package structure
-
-import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.slideInVertically
-import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.interaction.PressInteraction
-import androidx.compose.foundation.interaction.collectIsHoveredAsState // For mouse hover
-import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.CircleShape // Still useful for clipping content if needed
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.PathEffect
-import androidx.compose.ui.graphics.RectangleShape // For explicit pixel blocks
-import androidx.compose.ui.graphics.drawscope.DrawStyle
-import androidx.compose.ui.graphics.drawscope.Fill
+import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.waterintaketracker.ui.theme.WaterIntakeTrackerTheme // IMPORT YOUR THEME
+import androidx.navigation.NavController
+import com.example.waterintaketracker.ui.theme.WaterIntakeTrackerTheme
+import com.example.waterintaketracker.ui.theme.PixelShapes
+import com.example.waterintaketracker.ui.theme.PixelTypography
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.launch
 import kotlin.math.cos
-import kotlin.math.min
 import kotlin.math.sin
+import androidx.hilt.navigation.compose.hiltViewModel
+import Screens.Profile.ProfileViewModel
+import android.R.attr.scaleX
+import android.R.attr.scaleY
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.background
+import androidx.compose.ui.graphics.graphicsLayer
 
 // --- Gender Enum ---
 enum class Gender(val label: String, val iconLabel: String) {
     MALE("Male", "M"),
     FEMALE("Female", "F"),
-    OTHER("Other", "?") // Or use an icon
+    OTHER("Other", "?")
 }
 
 // --- ViewModel ---
@@ -73,9 +64,10 @@ class DefaultGenderViewModel : ViewModel() {
 @Composable
 fun GenderScreen(
     viewModel: DefaultGenderViewModel = viewModel(),
-    onNextClick: () -> Unit = {}
+    profileViewModel: ProfileViewModel = hiltViewModel(),
+    navController: NavController
 ) {
-    WaterIntakeTrackerTheme { // Ensure your PixelTypography and PixelShapes are applied
+    WaterIntakeTrackerTheme {
         val selectedGender by viewModel.selectedGender.collectAsState()
 
         Box(
@@ -87,7 +79,7 @@ fun GenderScreen(
             Column(
                 modifier = Modifier.fillMaxSize(),
                 horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.SpaceBetween // Pushes content and button
+                verticalArrangement = Arrangement.SpaceBetween
             ) {
                 // Header Section
                 Column(
@@ -96,7 +88,7 @@ fun GenderScreen(
                 ) {
                     Text(
                         text = "SELECT GENDER",
-                        style = MaterialTheme.typography.displaySmall, // Larger, more impactful
+                        style = MaterialTheme.typography.displaySmall,
                         textAlign = TextAlign.Center,
                         color = MaterialTheme.colorScheme.onBackground
                     )
@@ -113,11 +105,11 @@ fun GenderScreen(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(vertical = 40.dp), // Add more padding around the circles
+                        .padding(vertical = 40.dp),
                     horizontalArrangement = Arrangement.SpaceEvenly,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Gender.entries.forEach { gender ->
+                    Gender.values().forEach { gender ->
                         PixelatedGenderCircle(
                             gender = gender,
                             isSelected = selectedGender == gender,
@@ -130,7 +122,6 @@ fun GenderScreen(
                 Box(modifier = Modifier.height(80.dp)) // Reserve space for button
             }
 
-
             // Next Button (Aligned to bottom)
             AnimatedVisibility(
                 visible = selectedGender != null,
@@ -141,16 +132,16 @@ fun GenderScreen(
                     .padding(bottom = 32.dp)
             ) {
                 Button(
-                    onClick = { onNextClick() },
+                    onClick = {
+                        selectedGender?.let { gender ->
+                            profileViewModel.updateProfileField("gender", gender.label)
+                            navController.navigate("age")
+                        }
+                    },
                     modifier = Modifier
                         .fillMaxWidth(0.85f)
-                        .height(56.dp)
-                        .border(
-                            2.dp,
-                            MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.5f),
-                            MaterialTheme.shapes.medium // Use theme shape for button
-                        ),
-                    shape = MaterialTheme.shapes.medium, // Use theme shape for button
+                        .height(56.dp),
+                    shape = MaterialTheme.shapes.medium,
                     colors = ButtonDefaults.buttonColors(
                         containerColor = MaterialTheme.colorScheme.primary,
                         contentColor = MaterialTheme.colorScheme.onPrimary
@@ -166,65 +157,6 @@ fun GenderScreen(
     }
 }
 
-
-@Composable
-fun PixelatedBlockCircle(
-    modifier: Modifier = Modifier,
-    color: Color,
-    borderColor: Color,
-    borderWidth: Dp,
-    blockSize: Dp = 4.dp // Size of each "pixel" block
-) {
-    Canvas(modifier = modifier) {
-        val canvasRadius = size.minDimension / 2
-        val blockPx = blockSize.toPx()
-        val borderPx = borderWidth.toPx()
-
-        // Draw pixelated border
-        val numBorderSteps = (2 * Math.PI * (canvasRadius - borderPx / 2) / blockPx).toInt()
-        for (i in 0 until numBorderSteps) {
-            val angle = i.toFloat() / numBorderSteps.toFloat() * 2 * Math.PI.toFloat()
-            val x = center.x + (canvasRadius - borderPx / 2) * cos(angle)
-            val y = center.y + (canvasRadius - borderPx / 2) * sin(angle)
-            drawRect(
-                color = borderColor,
-                topLeft = Offset(x - blockPx / 2, y - blockPx / 2),
-                size = Size(blockPx, blockPx)
-            )
-        }
-
-        // Draw pixelated fill (slightly inset from the border)
-        val fillRadius = canvasRadius - borderPx - blockPx / 2 // Ensure fill is within border
-        if (fillRadius > 0) {
-            val numFillSteps = (2 * Math.PI * fillRadius / blockPx).toInt()
-            for (rStep in 0..(fillRadius / blockPx).toInt()) {
-                val currentRadius = rStep * blockPx
-                if (currentRadius > fillRadius) break
-                val numCircumferenceSteps = (2 * Math.PI * currentRadius / blockPx).toInt().coerceAtLeast(1)
-                for (i in 0 until numCircumferenceSteps) {
-                    val angle = i.toFloat() / numCircumferenceSteps.toFloat() * 2 * Math.PI.toFloat()
-                    val x = center.x + currentRadius * cos(angle)
-                    val y = center.y + currentRadius * sin(angle)
-                    drawRect(
-                        color = color,
-                        topLeft = Offset(x - blockPx / 2, y - blockPx / 2),
-                        size = Size(blockPx, blockPx)
-                    )
-                }
-            }
-            // Fill center block if radius is very small
-            if (numFillSteps == 0 && fillRadius > 0) {
-                drawRect(
-                    color = color,
-                    topLeft = Offset(center.x - blockPx / 2, center.y - blockPx / 2),
-                    size = Size(blockPx, blockPx)
-                )
-            }
-        }
-    }
-}
-
-
 @Composable
 fun PixelatedGenderCircle(
     gender: Gender,
@@ -233,55 +165,35 @@ fun PixelatedGenderCircle(
 ) {
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
-    // val isHovered by interactionSource.collectIsHoveredAsState() // Use if you need mouse hover
 
     val scale by animateFloatAsState(
-        targetValue = if (isPressed) 0.92f else 1f, // Slightly more noticeable scale
-        animationSpec = tween(durationMillis = 100),
-        label = "scaleAnimation"
+        targetValue = if (isPressed) 0.92f else 1f,
+        animationSpec = tween(durationMillis = 100)
     )
 
     val circleSize = 100.dp
     val iconSize = 48.sp
 
-    // --- Color Scheme ---
-    val currentScheme = MaterialTheme.colorScheme
-    val pressedColorShiftMultiplier = 0.8f // Darken/lighten factor on press
+    val colors = MaterialTheme.colorScheme
 
-    val baseBackgroundColor = if (isSelected) currentScheme.primaryContainer else currentScheme.surfaceVariant
-    val pressedBackgroundColor = if (isSelected) {
-        Color(
-            red = (baseBackgroundColor.red * pressedColorShiftMultiplier).coerceIn(0f, 1f),
-            green = (baseBackgroundColor.green * pressedColorShiftMultiplier).coerceIn(0f, 1f),
-            blue = (baseBackgroundColor.blue * pressedColorShiftMultiplier).coerceIn(0f, 1f),
-            alpha = baseBackgroundColor.alpha
-        )
-    } else {
-        currentScheme.primary.copy(alpha = 0.3f) // A distinct press color for non-selected
-    }
+    val baseBackgroundColor = if (isSelected) colors.primaryContainer else colors.surfaceVariant
+    val pressedBackgroundColor = if (isSelected) colors.primaryContainer.copy(alpha = 0.8f) else colors.primary.copy(alpha = 0.3f)
     val currentBackgroundColor = if (isPressed) pressedBackgroundColor else baseBackgroundColor
 
-
-    val baseBorderColor = if (isSelected) currentScheme.primary else currentScheme.outline
-    val pressedBorderColor = if (isSelected) {
-        currentScheme.tertiary // Example: shift to tertiary on press for selected
-    } else {
-        currentScheme.primary // Example: shift to primary on press for non-selected
-    }
+    val baseBorderColor = if (isSelected) colors.primary else colors.outline
+    val pressedBorderColor = if (isSelected) colors.tertiary else colors.primary
     val currentBorderColor = if (isPressed) pressedBorderColor else baseBorderColor
 
     val borderWidth = if (isSelected) 3.dp else 2.dp
-    val pressedBorderWidth = if (isSelected) 4.dp else 3.dp // Thicker border on press
+    val pressedBorderWidth = if (isSelected) 4.dp else 3.dp
     val currentBorderWidth = if (isPressed) pressedBorderWidth else borderWidth
 
-
     val currentContentColor = when {
-        isPressed && isSelected -> currentScheme.onPrimaryContainer.copy(alpha = 0.9f) // Slightly different on press selected
-        isPressed && !isSelected -> currentScheme.onPrimary // Content color for pressed non-selected
-        isSelected -> currentScheme.onPrimaryContainer
-        else -> currentScheme.onSurfaceVariant
+        isPressed && isSelected -> colors.onPrimaryContainer.copy(alpha = 0.9f)
+        isPressed && !isSelected -> colors.onPrimary
+        isSelected -> colors.onPrimaryContainer
+        else -> colors.onSurfaceVariant
     }
-
 
     Box(
         modifier = Modifier
@@ -302,13 +214,11 @@ fun PixelatedGenderCircle(
             color = currentBackgroundColor,
             borderColor = currentBorderColor,
             borderWidth = currentBorderWidth,
-            blockSize = 4.dp // Adjust for finer or coarser pixelation of the circle itself
+            blockSize = 4.dp
         )
 
-        // Content (Text/Icon) - Placed on top of the PixelatedBlockCircle
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
-            // Modifier.clip(CircleShape) // Optional: Clip content to a smooth circle if text overflows the blocky one
         ) {
             Text(
                 text = gender.iconLabel,
@@ -329,92 +239,58 @@ fun PixelatedGenderCircle(
     }
 }
 
-
-// --- Previews ---
-@Preview(showBackground = true, name = "Gender Screen Light - Female Selected", widthDp = 360, heightDp = 740)
 @Composable
-fun GenderScreenLightFemalePreview() {
-    WaterIntakeTrackerTheme(darkTheme = false) {
-        GenderScreen(
-            viewModel = remember { DefaultGenderViewModel().apply { selectGender(Gender.FEMALE) } },
-            onNextClick = {}
-        )
-    }
-}
+fun PixelatedBlockCircle(
+    modifier: Modifier = Modifier,
+    color: Color,
+    borderColor: Color,
+    borderWidth: Dp,
+    blockSize: Dp = 4.dp
+) {
+    Canvas(modifier = modifier) {
+        val canvasRadius = size.minDimension / 2
+        val blockPx = blockSize.toPx()
+        val borderPx = borderWidth.toPx()
 
-@Preview(showBackground = true, name = "Gender Screen Dark - No Selection", widthDp = 360, heightDp = 740)
-@Composable
-fun GenderScreenDarkPreview() {
-    WaterIntakeTrackerTheme(darkTheme = true) {
-        GenderScreen(
-            viewModel = remember { DefaultGenderViewModel() },
-            onNextClick = {}
-        )
-    }
-}
-
-@Preview(showBackground = true, name = "Gender Circle - Male Selected", widthDp = 150, heightDp = 200)
-@Composable
-fun GenderCircleSelectedPreview() {
-    WaterIntakeTrackerTheme(darkTheme = false) {
-        Box(contentAlignment = Alignment.Center, modifier = Modifier
-            .padding(16.dp)
-            .background(MaterialTheme.colorScheme.background)) {
-            PixelatedGenderCircle(gender = Gender.MALE, isSelected = true, onGenderClick = {})
-        }
-    }
-}
-
-@Preview(showBackground = true, name = "Gender Circle - Female Default", widthDp = 150, heightDp = 200)
-@Composable
-fun GenderCircleDefaultPreview() {
-    WaterIntakeTrackerTheme(darkTheme = true) {
-        Box(contentAlignment = Alignment.Center, modifier = Modifier
-            .padding(16.dp)
-            .background(MaterialTheme.colorScheme.background)) {
-            PixelatedGenderCircle(gender = Gender.FEMALE, isSelected = false, onGenderClick = {})
-        }
-    }
-}
-
-@Preview(showBackground = true, name = "Gender Circle - Female Pressed", widthDp = 150, heightDp = 200)
-@Composable
-fun GenderCircleFemalePressedPreview() {
-    WaterIntakeTrackerTheme(darkTheme = false) {
-        val interactionSource = remember { MutableInteractionSource() }
-        // Simulate pressed state for preview
-        LaunchedEffect(Unit) {
-            interactionSource.tryEmit(PressInteraction.Press(Offset.Zero))
-        }
-        Box(contentAlignment = Alignment.Center, modifier = Modifier
-            .padding(16.dp)
-            .background(MaterialTheme.colorScheme.background)) {
-            PixelatedGenderCircle(
-                gender = Gender.FEMALE,
-                isSelected = false, // Test pressed state for non-selected
-                onGenderClick = {}
+        // Draw pixelated border
+        val numBorderSteps = (2 * Math.PI * (canvasRadius - borderPx / 2) / blockPx).toInt()
+        for (i in 0 until numBorderSteps) {
+            val angle = i.toFloat() / numBorderSteps.toFloat() * 2 * Math.PI.toFloat()
+            val x = center.x + (canvasRadius - borderPx / 2) * cos(angle)
+            val y = center.y + (canvasRadius - borderPx / 2) * sin(angle)
+            drawRect(
+                color = borderColor,
+                topLeft = Offset(x - blockPx / 2, y - blockPx / 2),
+                size = Size(blockPx, blockPx)
             )
         }
-    }
-}
 
-@Preview(showBackground = true, name = "Gender Circle - Male Selected Pressed", widthDp = 150, heightDp = 200)
-@Composable
-fun GenderCircleMaleSelectedPressedPreview() {
-    WaterIntakeTrackerTheme(darkTheme = false) {
-        val interactionSource = remember { MutableInteractionSource() }
-        // Simulate pressed state for preview
-        LaunchedEffect(Unit) {
-            interactionSource.tryEmit(PressInteraction.Press(Offset.Zero))
-        }
-        Box(contentAlignment = Alignment.Center, modifier = Modifier
-            .padding(16.dp)
-            .background(MaterialTheme.colorScheme.background)) {
-            PixelatedGenderCircle(
-                gender = Gender.MALE,
-                isSelected = true, // Test pressed state for selected
-                onGenderClick = {}
-            )
+        // Draw pixelated fill (slightly inset from the border)
+        val fillRadius = canvasRadius - borderPx - blockPx / 2
+        if (fillRadius > 0) {
+            val numFillSteps = (2 * Math.PI * fillRadius / blockPx).toInt()
+            for (rStep in 0..(fillRadius / blockPx).toInt()) {
+                val currentRadius = rStep * blockPx
+                if (currentRadius > fillRadius) break
+                val numCircumferenceSteps = (2 * Math.PI * currentRadius / blockPx).toInt().coerceAtLeast(1)
+                for (i in 0 until numCircumferenceSteps) {
+                    val angle = i.toFloat() / numCircumferenceSteps.toFloat() * 2 * Math.PI.toFloat()
+                    val x = center.x + currentRadius * cos(angle)
+                    val y = center.y + currentRadius * sin(angle)
+                    drawRect(
+                        color = color,
+                        topLeft = Offset(x - blockPx / 2, y - blockPx / 2),
+                        size = Size(blockPx, blockPx)
+                    )
+                }
+            }
+            if (numFillSteps == 0 && fillRadius > 0) {
+                drawRect(
+                    color = color,
+                    topLeft = Offset(center.x - blockPx / 2, center.y - blockPx / 2),
+                    size = Size(blockPx, blockPx)
+                )
+            }
         }
     }
 }

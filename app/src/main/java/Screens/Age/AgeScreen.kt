@@ -15,12 +15,16 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
 import kotlinx.coroutines.launch
 import com.example.waterintaketracker.ui.theme.*
+import androidx.hilt.navigation.compose.hiltViewModel
+import Screens.Profile.ProfileViewModel // Import your ProfileViewModel
 
 @Composable
 fun AgeScreen(
-    onNextClick: () -> Unit = {}
+    navController: NavController,
+    profileViewModel: ProfileViewModel = hiltViewModel() // Inject ProfileViewModel
 ) {
     val ages = (0..115).toList()
     val listState = rememberLazyListState()
@@ -110,7 +114,9 @@ fun AgeScreen(
         // Next Button
         Button(
             onClick = {
-                onNextClick()
+                // Save the selected age to Firebase
+                profileViewModel.updateProfileField("age", selectedAge.value)
+                navController.navigate("weight")
             },
             modifier = Modifier
                 .align(Alignment.BottomCenter)

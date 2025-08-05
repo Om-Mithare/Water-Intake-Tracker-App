@@ -57,6 +57,7 @@ dependencies {
     implementation(libs.firebase.auth)
     implementation(libs.firebase.database)
     implementation(libs.firebase.firestore)
+    implementation("androidx.datastore:datastore-preferences:1.1.1")
 
     implementation(libs.androidx.credentials)
     implementation(libs.androidx.credentials.play.services.auth)
@@ -71,6 +72,11 @@ dependencies {
 
     implementation("com.patrykandpatrick.vico:core:1.12.0")
     implementation("com.patrykandpatrick.vico:compose:1.12.0")
+    implementation(libs.androidx.work.runtime.ktx)
+    implementation(libs.androidx.datastore.core.android)
+    implementation(libs.androidx.datastore.preferences.core.android)
+    implementation(libs.androidx.hilt.common)
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.0.4")
 
     kapt("com.google.dagger:hilt-android-compiler:2.51.1")
 

@@ -1,14 +1,9 @@
 package com.example.waterintaketracker.Models
 
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
-import java.util.UUID
-
 data class WaterLogEntry(
-    val id: String = UUID.randomUUID().toString(),
-    val amountMl: Int = 0, // Initialize with a default value for Firebase deserialization
-    val timestamp: Long = System.currentTimeMillis(),
-    val timeFormatted: String = "", // Initialize with a default value for Firebase deserialization
-    val userId: String = "" // New field to link to user
+    val id: String = "",
+    val amountMl: Int = 0, // Amount of water in milliliters
+    val timestamp: Long = 0, // Timestamp of the log entry
+    val timeFormatted: String = "", // Formatted time string (e.g., "8:00 AM")
+    val userId: String = "" // User ID associated with the log entry
 )

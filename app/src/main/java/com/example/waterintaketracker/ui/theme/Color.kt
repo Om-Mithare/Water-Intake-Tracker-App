@@ -63,6 +63,8 @@ val PixelWaterDarkError = Color(0xFFF85149)
 val PixelWaterDarkOnError = Color(0xFF000000)
 val PixelWaterDarkErrorContainer = Color(0xFF5C1A1A)
 val PixelWaterDarkOnErrorContainer = Color(0xFFFFC0C0)
+val PixelWaterDarkOutline = Color(0xFF4A4A4A)
+
 
 
 val PixelWaterLightBackground = Color(0xFFF7FAFC)

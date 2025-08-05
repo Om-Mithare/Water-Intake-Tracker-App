@@ -10,15 +10,21 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.*
+import androidx.navigation.NavController
 import kotlinx.coroutines.launch
-import androidx.compose.ui.graphics.Color
+import androidx.hilt.navigation.compose.hiltViewModel
+import Screens.Profile.ProfileViewModel // Import your ProfileViewModel
 
 @Composable
-fun WeightScreen() {
+fun WeightScreen(
+    navController: NavController,
+    profileViewModel: ProfileViewModel = hiltViewModel() // Inject ProfileViewModel
+) {
     val weights = (0..150).toList()
     val listState = rememberLazyListState()
     val coroutineScope = rememberCoroutineScope()
@@ -27,7 +33,7 @@ fun WeightScreen() {
     // Scroll to default weight
     LaunchedEffect(Unit) {
         coroutineScope.launch {
-            listState.scrollToItem(60)
+            listState.scrollToItem(60) // Scroll to weight 60 (index 60)
         }
     }
 
@@ -49,10 +55,10 @@ fun WeightScreen() {
             .background(backgroundColor)
             .padding(horizontal = 24.dp)
     ) {
-        // Slightly smaller pixel question text
+        // Question Text
         Text(
             text = "How much do you weigh?",
-            style = MaterialTheme.typography.displayMedium.copy( // 👈 Now 32.sp
+            style = MaterialTheme.typography.displayMedium.copy(
                 color = MaterialTheme.colorScheme.onBackground,
                 lineHeight = 42.sp,
                 textAlign = TextAlign.Center
@@ -107,10 +113,12 @@ fun WeightScreen() {
             }
         }
 
-        // Next Button with Pixel colors
+        // Next Button
         Button(
             onClick = {
-                // TODO: Navigate to next screen or save weight
+                // Save the selected weight to Firebase
+                profileViewModel.updateProfileField("weight", selectedWeight.value)
+                navController.navigate("wakeup")
             },
             modifier = Modifier
                 .align(Alignment.BottomCenter)

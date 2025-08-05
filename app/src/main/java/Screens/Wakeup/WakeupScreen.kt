@@ -16,11 +16,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.navigation.NavController
 import com.example.waterintaketracker.ui.theme.PixelTypography
+import androidx.hilt.navigation.compose.hiltViewModel
+import Screens.Profile.ProfileViewModel // Import your ProfileViewModel
 
 @Composable
 fun WakeupTimeScreen(
-    onNextClick: () -> Unit = {}
+    navController: NavController,
+    profileViewModel: ProfileViewModel = hiltViewModel() // Inject ProfileViewModel
 ) {
     var selectedHour by remember { mutableStateOf("08") }
     var selectedMinute by remember { mutableStateOf("00") }
@@ -77,7 +81,12 @@ fun WakeupTimeScreen(
             modifier = Modifier.fillMaxWidth()
         ) {
             Button(
-                onClick = onNextClick,
+                onClick = {
+                    // Save the selected wake-up time to Firebase
+                    val wakeupTime = "$selectedHour:$selectedMinute $selectedPeriod"
+                    profileViewModel.updateProfileField("wakeupTime", wakeupTime)
+                    navController.navigate("sleep")
+                },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(56.dp),
