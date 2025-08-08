@@ -36,6 +36,7 @@ import com.example.waterintaketracker.Models.PredefinedWaterSize
 import com.example.waterintaketracker.Models.WaterLogEntry
 import com.example.waterintaketracker.R
 import com.example.waterintaketracker.ViewModels.HomeViewModel
+import kotlinx.coroutines.flow.collectLatest
 
 val defaultWaterSizes = listOf(
     PredefinedWaterSize("Cup", 250, R.drawable.ic_water_cup),
@@ -55,17 +56,25 @@ fun HomeScreen(
     val totalIntakeToday by homeViewModel.totalIntakeToday.collectAsState()
     val dailyGoal by homeViewModel.dailyGoalMl.collectAsState()
     val currentStreak by homeViewModel.currentStreak.collectAsState()
-
-    var showAddDialog by remember { mutableStateOf(false) }
     val colorScheme = MaterialTheme.colorScheme
 
+    var showAddDialog by remember { mutableStateOf(false) }
     val isFabVisible = !showAddDialog
 
-    // Navigate to celebration if goal is newly achieved
-    LaunchedEffect(Unit) {
-        homeViewModel.triggerCelebrate.collect {
+    // Track previous total intake to detect when goal is reached
+    var previousTotal by remember { mutableStateOf(totalIntakeToday) }
+
+    LaunchedEffect(totalIntakeToday, dailyGoal) {
+        // Only trigger celebration if:
+        // 1. We just crossed the goal threshold
+        // 2. Daily goal is greater than 0
+        // 3. Current intake meets or exceeds the goal
+        if (dailyGoal > 0 &&
+            totalIntakeToday >= dailyGoal &&
+            previousTotal < dailyGoal) {
             navController.navigate("celebration")
         }
+        previousTotal = totalIntakeToday
     }
 
     Scaffold(

@@ -74,7 +74,7 @@ fun CelebrationScreen(modifier: Modifier = Modifier, onFinished: () -> Unit) {
     LaunchedEffect(Unit) {
         delay(CELEBRATION_DURATION_MS)
         if (isActive) {
-            mediaPlayer.stop()
+            if (mediaPlayer.isPlaying) mediaPlayer.stop()
             mediaPlayer.release()
             onFinished()
         }
@@ -229,6 +229,7 @@ fun CelebrationScreen(modifier: Modifier = Modifier, onFinished: () -> Unit) {
 private val SineInOutEasing = Easing { fraction ->
     (1f - kotlin.math.cos(PI * fraction).toFloat()) / 2f
 }
+
 // createComplexPixelWavePath and helper draw methods are unchanged and assumed present.
 // Helper functions (createComplexPixelWavePath, drawDynamicPixelFoam, drawSparklesEnhanced) are not changed as they are correct.
 fun createComplexPixelWavePath(
