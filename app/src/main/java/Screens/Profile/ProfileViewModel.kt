@@ -2,54 +2,56 @@ package Screens.Profile
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.waterintaketracker.Models.Users // Your Users model
-import com.example.waterintaketracker.data.UserRepository // Import UserRepository
+import com.example.waterintaketracker.data.UserRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
 class ProfileViewModel @Inject constructor(
-    private val userRepository: UserRepository // Inject UserRepository
+    private val userRepository: UserRepository
 ) : ViewModel() {
 
-    val userProfile: StateFlow<Users?> = userRepository.userProfile
-    val loading: StateFlow<Boolean> = userRepository.loading
-    val errorMessage: StateFlow<String?> = userRepository.errorMessage // Expose error message
+    val userProfile = userRepository.userProfile
+    val loading = userRepository.loading
 
-    // You can also directly expose the calculated goal if needed on the profile screen itself
-    val dailyGoal: StateFlow<Int> = userRepository.calculatedDailyWaterIntake
+    private val _errorMessage = MutableStateFlow<String?>(null)
+    val errorMessage: StateFlow<String?> = _errorMessage
 
-    private val _updateMessage = MutableStateFlow<String?>(null)
-    val updateMessage: StateFlow<String?> = _updateMessage.asStateFlow()
-
-
-    fun updateProfileField(field: String, value: Any) {
+    fun logout() {
         viewModelScope.launch {
-            userRepository.updateProfileField(field, value,
-                onSuccess = {
-                    _updateMessage.value = "$field updated successfully."
-                    // Message will clear after a delay (see below)
-                },
-                onFailure = { e ->
-                    _updateMessage.value = "Failed to update $field: ${e.message}"
-                }
-            )
+            try {
+                userRepository.logout(
+                    onSuccess = {
+                        userRepository.clearLoginState()
+                    },
+                    onFailure = { e ->
+                        _errorMessage.value = "Logout failed: ${e.message}"
+                    }
+                )
+            } catch (e: Exception) {
+                _errorMessage.value = "Logout error: ${e.message}"
+            }
         }
     }
 
-    fun clearUpdateMessage() {
-        _updateMessage.value = null
-    }
-
-    fun logout(onSuccess: () -> Unit) {
-        userRepository.logout(
-            onSuccess = onSuccess,
-            onFailure = { e ->
-                // Handle logout failure if necessary, e.g., show a message
-                _updateMessage.value = "Logout failed: ${e.message}"
+    fun updateProfileField(field: String, value: Any) {
+        viewModelScope.launch {
+            try {
+                userRepository.updateProfileField(
+                    field = field,
+                    value = value,
+                    onSuccess = { /* Success handled by state flows */ },
+                    onFailure = { e ->
+                        _errorMessage.value = "Update failed: ${e.message}"
+                    }
+                )
+            } catch (e: Exception) {
+                _errorMessage.value = "Update error: ${e.message}"
             }
-        )
+        }
     }
 }

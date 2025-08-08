@@ -48,7 +48,7 @@ fun LoadingScreen(
             targetValue = 1f,
             animationSpec = tween(durationMillis = 1000, easing = LinearEasing)
         )
-        delay(6000)
+        delay(3000)
         contentAlpha.animateTo(
             targetValue = 0f,
             animationSpec = tween(durationMillis = 500)

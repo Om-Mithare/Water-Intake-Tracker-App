@@ -1,5 +1,6 @@
 package Screens.Exercise
 
+import Screens.Profile.ProfileViewModel
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.slideInVertically
@@ -19,7 +20,6 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.example.waterintaketracker.ui.theme.* // Make sure this path is correct
-import Screens.Profile.ProfileViewModel // Make sure this path is correct
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue

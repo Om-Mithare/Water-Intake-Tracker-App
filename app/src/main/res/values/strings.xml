@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">Water Intake Tracker</string>
+    <string name="app_name">Pixo-Hydrate</string>
     <!-- ... other strings ... -->
     <string name="notification_title">Stay Hydrated!</string>
     <string name="notification_text">Time to drink some water.</string>

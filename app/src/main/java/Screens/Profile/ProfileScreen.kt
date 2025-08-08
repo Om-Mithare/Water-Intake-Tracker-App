@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
@@ -123,7 +122,7 @@ fun ProfileScreen(
                             )
                         }
                     }
-                    Spacer(modifier = Modifier.height(8.dp)) // Adjust this to reduce space
+                    Spacer(modifier = Modifier.height(8.dp))
                     Text(
                         user.username,
                         style = PixelTypography.headlineLarge,
@@ -194,11 +193,10 @@ fun ProfileScreen(
                 // Logout Button
                 Button(
                     onClick = {
-                        viewModel.logout {
-                            navController.navigate("login") {
-                                popUpTo(navController.graph.startDestinationId) {
-                                    inclusive = true
-                                }
+                        viewModel.logout()
+                        navController.navigate("login") {
+                            popUpTo(navController.graph.startDestinationId) {
+                                inclusive = true
                             }
                         }
                     },
@@ -504,19 +502,19 @@ fun EditExerciseDialog(
             Column {
                 options.forEach { level ->
                     Row(
-                            Modifier
-                                .fillMaxWidth()
-                                .clickable { selectedExercise = level }
-                                .padding(vertical = 8.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            RadioButton(
-                                selected = selectedExercise == level,
-                                onClick = { selectedExercise = level }
-                            )
-                            Spacer(Modifier.width(8.dp))
-                            Text(level)
-                        }
+                        Modifier
+                            .fillMaxWidth()
+                            .clickable { selectedExercise = level }
+                            .padding(vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        RadioButton(
+                            selected = selectedExercise == level,
+                            onClick = { selectedExercise = level }
+                        )
+                        Spacer(Modifier.width(8.dp))
+                        Text(level)
+                    }
                 }
             }
         },
@@ -536,5 +534,3 @@ fun EditExerciseDialog(
         }
     )
 }
-
-

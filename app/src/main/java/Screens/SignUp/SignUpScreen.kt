@@ -13,8 +13,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -25,7 +23,6 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.waterintaketracker.Models.Users
 
@@ -33,6 +30,7 @@ import com.example.waterintaketracker.Models.Users
 @Composable
 fun SignUpScreen(
     navController: NavController,
+    onSignUpSuccess: () -> Unit, // Add this parameter
     viewModel: SignInViewModel = hiltViewModel()
 ) {
     var email by remember { mutableStateOf("") }
@@ -245,12 +243,16 @@ fun SignUpScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clip(MaterialTheme.shapes.small)
-                        .clickable { navController.navigate("Login") }
+                        .clickable { navController.navigate("login") }
                         .padding(vertical = 12.dp)
                 )
 
+                // Check sign-up state and invoke onSignUpSuccess if successful
                 signUpState?.let { stateMessage ->
                     val isSuccess = stateMessage.contains("Success", ignoreCase = true)
+                    if (isSuccess) {
+                        onSignUpSuccess() // Call the success callback
+                    }
                     val statusBackgroundColor = if (isSuccess) {
                         MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.9f)
                     } else {

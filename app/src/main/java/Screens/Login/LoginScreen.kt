@@ -5,8 +5,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -22,6 +20,7 @@ import com.example.waterintaketracker.Models.Users
 @Composable
 fun LoginScreen(
     navController: NavController,
+    onLoginSuccess: () -> Unit, // Add this parameter
     viewModel: LogInViewModel = hiltViewModel()
 ) {
     var email by remember { mutableStateOf("") }
@@ -138,12 +137,16 @@ fun LoginScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clip(MaterialTheme.shapes.small)
-                        .clickable { navController.navigate("Signup") }
+                        .clickable { navController.navigate("signup") }
                         .padding(vertical = 12.dp)
                 )
 
+                // Check login state and invoke onLoginSuccess if successful
                 loginState?.let { stateMessage ->
                     val isSuccess = stateMessage.contains("Success", ignoreCase = true)
+                    if (isSuccess) {
+                        onLoginSuccess() // Call the success callback
+                    }
                     val statusBackgroundColor = if (isSuccess) {
                         MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.9f)
                     } else {

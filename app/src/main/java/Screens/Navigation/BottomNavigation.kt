@@ -79,7 +79,7 @@ fun contentScreen(
     profileViewModel: ProfileViewModel
 ) {
     when (selectedIndex) {
-        0 -> HomeScreen(navController, modifier = modifier, homeViewModel = homeViewModel, profileViewModel = profileViewModel)
+        0 -> HomeScreen(navController = navController, modifier = modifier, homeViewModel = homeViewModel)
         1 -> HistoryScreen()
         2 -> ProfileScreen(navController = navController)
     }

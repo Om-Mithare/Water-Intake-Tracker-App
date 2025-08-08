@@ -1,3 +1,4 @@
+import org.gradle.kotlin.dsl.androidTestImplementation
 import org.gradle.kotlin.dsl.implementation
 
 plugins {
@@ -57,7 +58,7 @@ dependencies {
     implementation(libs.firebase.auth)
     implementation(libs.firebase.database)
     implementation(libs.firebase.firestore)
-    implementation("androidx.datastore:datastore-preferences:1.1.1")
+    implementation(libs.androidx.datastore.preferences)
 
     implementation(libs.androidx.credentials)
     implementation(libs.androidx.credentials.play.services.auth)
@@ -70,24 +71,32 @@ dependencies {
     implementation("androidx.compose.material:material-icons-core:1.7.0")
     implementation("androidx.compose.material:material-icons-extended:1.7.0")
 
+    implementation("com.google.accompanist:accompanist-permissions:0.31.1-alpha")
+
     implementation("com.patrykandpatrick.vico:core:1.12.0")
     implementation("com.patrykandpatrick.vico:compose:1.12.0")
     implementation(libs.androidx.work.runtime.ktx)
     implementation(libs.androidx.datastore.core.android)
     implementation(libs.androidx.datastore.preferences.core.android)
     implementation(libs.androidx.hilt.common)
+    implementation(libs.androidx.room.external.antlr)
+    implementation(libs.androidx.junit.ktx)
+    implementation("androidx.compose.animation:animation:1.6.0")
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.0.4")
 
     kapt("com.google.dagger:hilt-android-compiler:2.51.1")
+    implementation("androidx.hilt:hilt-work:1.1.0")
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.ui.test.junit4)
+    androidTestImplementation("androidx.work:work-testing:2.7.1")
 
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
+    implementation(kotlin("test"))
 }
 
 kapt {

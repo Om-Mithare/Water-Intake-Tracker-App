@@ -1,6 +1,7 @@
 {
   "project_info": {
     "project_number": "825145199958",
+    "firebase_url": "https://water-intake-tracker-c165c-default-rtdb.firebaseio.com",
     "project_id": "water-intake-tracker-c165c",
     "storage_bucket": "water-intake-tracker-c165c.firebasestorage.app"
   },
@@ -12,7 +13,20 @@
           "package_name": "com.example.waterintaketracker"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "825145199958-b4b9kre76n3opjjokqjsnoa8qaseul3n.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.waterintaketracker",
+            "certificate_hash": "760c2da0de5365aceb26f9f25b4dfc5ca18d1d81"
+          }
+        },
+        {
+          "client_id": "825145199958-rc50hoe25sja4q2qg0ne28nf0htjrsd2.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyAjjLbMLkYs36tRVq81nBXdSJ12ZXyc818"
@@ -20,7 +34,12 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "825145199958-rc50hoe25sja4q2qg0ne28nf0htjrsd2.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
         }
       }
     }

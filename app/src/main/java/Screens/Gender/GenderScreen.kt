@@ -1,5 +1,6 @@
 package Screens.Gender
 
+import Screens.Profile.ProfileViewModel
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
@@ -36,7 +37,6 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlin.math.cos
 import kotlin.math.sin
 import androidx.hilt.navigation.compose.hiltViewModel
-import Screens.Profile.ProfileViewModel
 import android.R.attr.scaleX
 import android.R.attr.scaleY
 import androidx.compose.foundation.Canvas

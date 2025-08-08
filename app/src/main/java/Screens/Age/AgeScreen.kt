@@ -1,5 +1,6 @@
 package com.waterintaketracker.screens.age
 
+import Screens.Profile.ProfileViewModel
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -19,7 +20,6 @@ import androidx.navigation.NavController
 import kotlinx.coroutines.launch
 import com.example.waterintaketracker.ui.theme.*
 import androidx.hilt.navigation.compose.hiltViewModel
-import Screens.Profile.ProfileViewModel // Import your ProfileViewModel
 
 @Composable
 fun AgeScreen(

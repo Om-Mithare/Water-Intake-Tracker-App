@@ -1,11 +1,10 @@
 package com.example.waterintaketracker.ViewModels
 
-// No longer need to import ProfileViewModel directly
 import androidx.compose.runtime.mutableStateListOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.waterintaketracker.Models.WaterLogEntry
-import com.example.waterintaketracker.data.UserRepository // Import UserRepository
+import com.example.waterintaketracker.data.UserRepository
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.*
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -17,9 +16,9 @@ import javax.inject.Inject
 
 @HiltViewModel
 class HomeViewModel @Inject constructor(
-    private val firebaseAuth: FirebaseAuth, // Keep for auth state if needed for logs
-    private val firebaseDatabase: FirebaseDatabase, // Keep for water logs
-    private val userRepository: UserRepository // Inject UserRepository
+    private val firebaseAuth: FirebaseAuth,
+    private val firebaseDatabase: FirebaseDatabase,
+    private val userRepository: UserRepository
 ) : ViewModel() {
 
     private val _todaysLog = mutableStateListOf<WaterLogEntry>()
@@ -28,7 +27,6 @@ class HomeViewModel @Inject constructor(
     private val _totalIntakeToday = MutableStateFlow(0)
     val totalIntakeToday: StateFlow<Int> = _totalIntakeToday.asStateFlow()
 
-    // Get the daily goal directly from the shared UserRepository
     val dailyGoalMl: StateFlow<Int> = userRepository.calculatedDailyWaterIntake
 
     private val _currentStreak = MutableStateFlow(0)
@@ -37,11 +35,12 @@ class HomeViewModel @Inject constructor(
     private var waterLogListener: ValueEventListener? = null
     private var currentHomeUserId: String? = null
 
+    private val _triggerCelebrate = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
+    val triggerCelebrate: SharedFlow<Unit> = _triggerCelebrate.asSharedFlow()
+
     init {
-        // Observe dailyGoalMl changes from the repository to recalculate streak
         viewModelScope.launch {
-            dailyGoalMl.collectLatest { goal ->
-                // Only recalculate if a user is active and goal actually changed (or on init)
+            dailyGoalMl.collectLatest {
                 if (currentHomeUserId != null) {
                     recalculateTotalsAndUpdateStreak()
                 }
@@ -62,6 +61,7 @@ class HomeViewModel @Inject constructor(
                 clearHomeUserData()
             }
         }
+
         firebaseAuth.currentUser?.uid?.let { userId ->
             if (currentHomeUserId == null) {
                 currentHomeUserId = userId
@@ -72,20 +72,13 @@ class HomeViewModel @Inject constructor(
 
     private fun initializeDataForUser(userId: String) {
         startListeningForWaterLogs(userId)
-        // Streak will be recalculated when dailyGoalMl emits or logs change
     }
 
     private fun clearHomeUserData() {
         _todaysLog.clear()
         _totalIntakeToday.value = 0
         _currentStreak.value = 0
-        // dailyGoalMl will automatically reset via userRepository if user logs out
     }
-
-    // ... (rest of HomeViewModel: startListeningForWaterLogs, addWater, removeLogEntry,
-    //      recalculateTotalsAndUpdateStreak, calculateStreakInternal, getStartOfDayMillis, getEndOfDayMillis,
-    //      cleanupPreviousUserListeners, onCleared)
-    // IMPORTANT: Ensure calculateStreakInternal() uses `dailyGoalMl.value`
 
     private fun cleanupPreviousUserListeners() {
         currentHomeUserId?.let { userId ->
@@ -102,7 +95,7 @@ class HomeViewModel @Inject constructor(
     }
 
     private fun startListeningForWaterLogs(userId: String) {
-        cleanupPreviousUserListeners() // Ensure old listeners are removed
+        cleanupPreviousUserListeners()
 
         val todayStartMillis = getStartOfDayMillis(System.currentTimeMillis())
         val todayEndMillis = getEndOfDayMillis(System.currentTimeMillis())
@@ -113,7 +106,7 @@ class HomeViewModel @Inject constructor(
             .startAt(todayStartMillis.toDouble())
             .endAt(todayEndMillis.toDouble())
 
-        waterLogListener = object : ValueEventListener { // Assign directly
+        waterLogListener = object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 val newLogs = mutableListOf<WaterLogEntry>()
                 snapshot.children.forEach { logSnapshot ->
@@ -138,6 +131,8 @@ class HomeViewModel @Inject constructor(
             val userId = currentHomeUserId ?: return@launch
             if (amountMl <= 0) return@launch
 
+            val alreadyMetGoal = _totalIntakeToday.value >= dailyGoalMl.value
+
             val currentTime = System.currentTimeMillis()
             val newEntry = WaterLogEntry(
                 id = UUID.randomUUID().toString(),
@@ -148,6 +143,12 @@ class HomeViewModel @Inject constructor(
             )
             firebaseDatabase.getReference("waterLogs").child(userId).child(newEntry.id)
                 .setValue(newEntry)
+                .addOnSuccessListener {
+                    val newTotal = _totalIntakeToday.value + amountMl
+                    if (!alreadyMetGoal && newTotal >= dailyGoalMl.value) {
+                        _triggerCelebrate.tryEmit(Unit)
+                    }
+                }
         }
     }
 
@@ -159,19 +160,14 @@ class HomeViewModel @Inject constructor(
         }
     }
 
-
     private fun recalculateTotalsAndUpdateStreak() {
         _totalIntakeToday.value = _todaysLog.sumOf { it.amountMl }
         calculateStreakInternal()
     }
 
     private fun calculateStreakInternal() {
-        val userId = currentHomeUserId
-        if (userId == null) {
-            _currentStreak.value = 0
-            return
-        }
-        val currentGoal = dailyGoalMl.value // Use the value from the StateFlow
+        val userId = currentHomeUserId ?: return
+        val currentGoal = dailyGoalMl.value
 
         firebaseDatabase.getReference("waterLogs").child(userId)
             .orderByChild("timestamp")
@@ -189,15 +185,10 @@ class HomeViewModel @Inject constructor(
 
                     val loggedDaysMetGoal = allUserLogs
                         .groupBy { getStartOfDayMillis(it.timestamp) }
-                        .mapValues { entry -> entry.value.sumOf { log -> log.amountMl } }
-                        .filterValues { dailyTotal -> dailyTotal >= currentGoal }
+                        .mapValues { entry -> entry.value.sumOf { it.amountMl } }
+                        .filterValues { it >= currentGoal }
                         .keys
                         .sortedDescending()
-
-                    if (loggedDaysMetGoal.isEmpty()) {
-                        _currentStreak.value = 0
-                        return
-                    }
 
                     var streak = 0
                     val todayStart = getStartOfDayMillis(System.currentTimeMillis())
@@ -206,14 +197,13 @@ class HomeViewModel @Inject constructor(
                     for (i in loggedDaysMetGoal.indices) {
                         calendar.timeInMillis = todayStart
                         calendar.add(Calendar.DAY_OF_YEAR, -i)
-                        val expectedDayForStreak = calendar.timeInMillis
+                        val expectedDay = calendar.timeInMillis
 
-                        if (i < loggedDaysMetGoal.size && loggedDaysMetGoal[i] == expectedDayForStreak) {
+                        if (loggedDaysMetGoal[i] == expectedDay) {
                             streak++
-                        } else {
-                            break
-                        }
+                        } else break
                     }
+
                     _currentStreak.value = streak
                 }
 
@@ -227,14 +217,20 @@ class HomeViewModel @Inject constructor(
     private fun getStartOfDayMillis(timestamp: Long): Long {
         return Calendar.getInstance().apply {
             timeInMillis = timestamp
-            set(Calendar.HOUR_OF_DAY, 0); set(Calendar.MINUTE, 0); set(Calendar.SECOND, 0); set(Calendar.MILLISECOND, 0)
+            set(Calendar.HOUR_OF_DAY, 0)
+            set(Calendar.MINUTE, 0)
+            set(Calendar.SECOND, 0)
+            set(Calendar.MILLISECOND, 0)
         }.timeInMillis
     }
 
     private fun getEndOfDayMillis(timestamp: Long): Long {
         return Calendar.getInstance().apply {
             timeInMillis = timestamp
-            set(Calendar.HOUR_OF_DAY, 23); set(Calendar.MINUTE, 59); set(Calendar.SECOND, 59); set(Calendar.MILLISECOND, 999)
+            set(Calendar.HOUR_OF_DAY, 23)
+            set(Calendar.MINUTE, 59)
+            set(Calendar.SECOND, 59)
+            set(Calendar.MILLISECOND, 999)
         }.timeInMillis
     }
 }
